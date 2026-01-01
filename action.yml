@@ -1,0 +1,63 @@
+name: 'Docker Checkout'
+description: 'Checkout a Git repository using Docker - no Node.js required'
+branding:
+  icon: 'download'
+  color: 'blue'
+
+inputs:
+  repository:
+    description: 'Repository name with owner. For example, actions/checkout'
+    default: ${{ github.repository }}
+  ref:
+    description: 'The branch, tag or SHA to checkout. When checking out the repository that triggered a workflow, this defaults to the reference or SHA for that event.'
+    default: ''
+  token:
+    description: 'Personal access token (PAT) used to fetch the repository. Not typically needed for public repos.'
+    default: ${{ github.token }}
+    required: false
+  ssh-key:
+    description: 'SSH key used to fetch the repository. Not typically needed.'
+    default: ''
+    required: false
+  ssh-known-hosts:
+    description: 'Known hosts in addition to the user and global host key database'
+    default: ''
+    required: false
+  persist-credentials:
+    description: 'Whether to configure the token or SSH key with the local git config'
+    default: 'true'
+  path:
+    description: 'Relative path under $GITHUB_WORKSPACE to place the repository'
+    default: '.'
+  clean:
+    description: 'Whether to execute `git clean -ffdx && git reset --hard HEAD` before fetching'
+    default: 'true'
+  fetch-depth:
+    description: 'Number of commits to fetch. 0 indicates all history for all branches and tags.'
+    default: '1'
+  lfs:
+    description: 'Whether to download Git-LFS files'
+    default: 'false'
+  submodules:
+    description: 'Whether to checkout submodules: `true` to checkout submodules or `recursive` to recursively checkout submodules'
+    default: 'false'
+  set-safe-directory:
+    description: 'Add repository path as safe.directory for Git global config'
+    default: 'true'
+
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
+  env:
+    INPUT_REPOSITORY: ${{ inputs.repository }}
+    INPUT_REF: ${{ inputs.ref }}
+    INPUT_TOKEN: ${{ inputs.token }}
+    INPUT_SSH_KEY: ${{ inputs.ssh-key }}
+    INPUT_SSH_KNOWN_HOSTS: ${{ inputs.ssh-known-hosts }}
+    INPUT_PERSIST_CREDENTIALS: ${{ inputs.persist-credentials }}
+    INPUT_PATH: ${{ inputs.path }}
+    INPUT_CLEAN: ${{ inputs.clean }}
+    INPUT_FETCH_DEPTH: ${{ inputs.fetch-depth }}
+    INPUT_LFS: ${{ inputs.lfs }}
+    INPUT_SUBMODULES: ${{ inputs.submodules }}
+    INPUT_SET_SAFE_DIRECTORY: ${{ inputs.set-safe-directory }}
