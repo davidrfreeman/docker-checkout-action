@@ -247,10 +247,6 @@ For Forgejo, generate a token in your user settings and add it as a secret.
     ssh-known-hosts: ${{ secrets.SSH_KNOWN_HOSTS }}
 ```
 
-## Contributing
-
-Contributions welcome! Please open an issue or PR.
-
 ## License
 
 MIT License - see LICENSE file for details.
