@@ -6,9 +6,13 @@ A Docker-based Git checkout action that **doesn't require Node.js**. Perfect for
 
 The standard `actions/checkout` action is written in JavaScript and requires Node.js to be installed in your job container. This action uses Docker instead, allowing you to use any base image (Python, Go, Rust, Alpine, etc.) without needing Node.js.
 
+**This action uses pre-built Docker images** hosted on GitHub Container Registry (ghcr.io) for fast execution - no build time required!
+
 ## Features
 
 ✅ **No Node.js required** - Works with any container image
+✅ **Pre-built images** - Fast execution, no build time
+✅ **Multi-platform** - Supports AMD64 and ARM64
 ✅ **Full Git functionality** - Supports branches, tags, commits, and SHA checkouts
 ✅ **Submodules support** - Can recursively checkout submodules
 ✅ **Git LFS support** - Download large files if needed
@@ -112,6 +116,47 @@ steps:
 
 ## Examples
 
+### Python Project
+
+```yaml
+name: Python Tests
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    container:
+      image: python:3.11-slim
+    steps:
+      - uses: YOUR_GITHUB_USERNAME/docker-checkout-action@v1
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run tests
+        run: pytest
+```
+
+### Rust Project
+
+```yaml
+name: Rust Build
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: rust:1.75-alpine
+    steps:
+      - uses: YOUR_GITHUB_USERNAME/docker-checkout-action@v1
+
+      - name: Build
+        run: cargo build --release
+```
+
 ### Multi-Platform
 
 ```yaml
@@ -172,7 +217,7 @@ jobs:
 
 ### Permission Denied
 
-If you get permission errors, ensure your forgejo/gitea runner has Docker socket access:
+If you get permission errors, ensure your runner has Docker socket access:
 
 ```yaml
 services:
@@ -212,4 +257,4 @@ MIT License - see LICENSE file for details.
 
 ## Acknowledgments
 
-Inspired by the need for Node.js-less checkouts in minimal container images. Built for the Forgejo/Gitea community.
+Inspired by the need for Node.js-free checkouts in minimal container images. Built for the Forgejo/Gitea community.
