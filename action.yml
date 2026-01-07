@@ -47,7 +47,7 @@ inputs:
 
 runs:
   using: 'docker'
-  image: 'docker://ghcr.io/davidrfreeman/docker-checkout-action:v1'
+  image: 'docker://ghcr.io/davidrfreeman/docker-checkout-action:0'
   env:
     INPUT_REPOSITORY: ${{ inputs.repository }}
     INPUT_REF: ${{ inputs.ref }}
