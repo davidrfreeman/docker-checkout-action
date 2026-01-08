@@ -10,14 +10,14 @@ The standard `actions/checkout` action is written in JavaScript and requires Nod
 
 ## Features
 
-✅ **No Node.js required** - Works with any container image  
-✅ **Pre-built images** - Fast execution, no build time  
-✅ **Multi-platform** - Supports AMD64 and ARM64  
-✅ **Full Git functionality** - Supports branches, tags, commits, and SHA checkouts  
-✅ **Submodules support** - Can recursively checkout submodules  
-✅ **Git LFS support** - Download large files if needed  
-✅ **SSH & HTTPS** - Supports both authentication methods  
-✅ **Forgejo/Gitea compatible** - Works seamlessly with self-hosted Git servers  
+✅ **No Node.js required** - Works with any container image
+✅ **Pre-built images** - Fast execution, no build time
+✅ **Multi-platform** - Supports AMD64 and ARM64
+✅ **Full Git functionality** - Supports branches, tags, commits, and SHA checkouts
+✅ **Submodules support** - Can recursively checkout submodules
+✅ **Git LFS support** - Download large files if needed
+✅ **SSH & HTTPS** - Supports both authentication methods
+✅ **Forgejo/Gitea compatible** - Works seamlessly with self-hosted Git servers
 ✅ **GitHub compatible** - Drop-in replacement for basic `actions/checkout` usage
 
 ## Usage
@@ -44,6 +44,8 @@ jobs:
 
 ### With Forgejo/Gitea (Self-Hosted)
 
+**Important:** With Forgejo, you may need to explicitly specify the repository:
+
 ```yaml
 name: Build
 on: [push]
@@ -54,8 +56,10 @@ jobs:
     container:
       image: golang:1.21-alpine
     steps:
-      # Public repository - no token needed
-      - uses: https://github.com/YOUR_GITHUB_USERNAME/docker-checkout-action@v1
+      # Explicit repository specification (recommended for Forgejo)
+      - uses: https://github.com/davidrfreeman/docker-checkout-action@v0.1.7
+        with:
+          repository: ${{ github.repository }}
 
       - name: Build
         run: go build -v ./...
@@ -66,12 +70,16 @@ jobs:
 ```yaml
 steps:
   # Private repository - use Forgejo's token
-  - uses: https://github.com/YOUR_GITHUB_USERNAME/docker-checkout-action@v1
+  - uses: https://github.com/davidrfreeman/docker-checkout-action@v0.1.7
     with:
-      token: ${{ secrets.FORGEJO_TOKEN }}
+      repository: ${{ github.repository }}
+      token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
-**Note:** Forgejo automatically provides `${{ secrets.GITHUB_TOKEN }}` for accessing the current repository. For private repos, this token is automatically used.
+**Note:** Forgejo provides these context variables:
+- `${{ github.repository }}` - Current repository (e.g., `owner/repo`)
+- `${{ github.server_url }}` - Your Forgejo instance URL
+- `${{ secrets.GITHUB_TOKEN }}` - Automatic token for the current repository
 
 ### Advanced Usage
 
@@ -105,27 +113,27 @@ steps:
 
 ## Inputs
 
-| Input | Description | Default |
-|-------|-------------|---------|
-| `repository` | Repository name with owner (e.g., `octocat/hello-world`) | `${{ github.repository }}` |
-| `ref` | Branch, tag, or SHA to checkout | Event ref/SHA |
-| `token` | Personal access token for private repos | `${{ github.token }}` |
-| `ssh-key` | SSH private key for authentication | `''` |
-| `ssh-known-hosts` | Known hosts for SSH | `''` |
-| `persist-credentials` | Keep credentials in git config | `true` |
-| `path` | Relative path to checkout repo | `.` |
-| `clean` | Clean working directory before checkout | `true` |
-| `fetch-depth` | Number of commits to fetch (0 = all) | `1` |
-| `lfs` | Whether to download Git LFS files | `false` |
-| `submodules` | Checkout submodules (`true`/`recursive`/`false`) | `false` |
-| `set-safe-directory` | Mark directory as safe | `true` |
+| Input                 | Description                                              | Default                    |
+|-----------------------|----------------------------------------------------------|----------------------------|
+| `repository`          | Repository name with owner (e.g., `octocat/hello-world`) | `${{ github.repository }}` |
+| `ref`                 | Branch, tag, or SHA to checkout                          | Event ref/SHA              |
+| `token`               | Personal access token for private repos                  | `${{ github.token }}`      |
+| `ssh-key`             | SSH private key for authentication                       | `''`                       |
+| `ssh-known-hosts`     | Known hosts for SSH                                      | `''`                       |
+| `persist-credentials` | Keep credentials in git config                           | `true`                     |
+| `path`                | Relative path to checkout repo                           | `.`                        |
+| `clean`               | Clean working directory before checkout                  | `true`                     |
+| `fetch-depth`         | Number of commits to fetch (0 = all)                     | `1`                        |
+| `lfs`                 | Whether to download Git LFS files                        | `false`                    |
+| `submodules`          | Checkout submodules (`true`/`recursive`/`false`)         | `false`                    |
+| `set-safe-directory`  | Mark directory as safe                                   | `true`                     |
 
 ## Outputs
 
-| Output | Description |
-|--------|-------------|
+| Output       | Description                         |
+|--------------|-------------------------------------|
 | `commit-sha` | The commit SHA that was checked out |
-| `branch` | The branch that was checked out |
+| `branch`     | The branch that was checked out     |
 
 ## Examples
 
@@ -216,15 +224,15 @@ jobs:
 
 ## Comparison with actions/checkout
 
-| Feature | actions/checkout | docker-checkout-action |
-|---------|-----------------|----------------------|
-| Requires Node.js | ✅ Yes | ❌ No |
-| Works with minimal images | ❌ No | ✅ Yes |
-| Forgejo/Gitea support | ✅ Yes | ✅ Yes |
-| Submodules | ✅ Yes | ✅ Yes |
-| Git LFS | ✅ Yes | ✅ Yes |
-| Speed | Faster (native) | Slightly slower (Docker) |
-| Advanced features | More | Basic |
+| Feature                   | actions/checkout | docker-checkout-action   |
+|---------------------------|------------------|--------------------------|
+| Requires Node.js          | ✅ Yes            | ❌ No                     |
+| Works with minimal images | ❌ No             | ✅ Yes                    |
+| Forgejo/Gitea support     | ✅ Yes            | ✅ Yes                    |
+| Submodules                | ✅ Yes            | ✅ Yes                    |
+| Git LFS                   | ✅ Yes            | ✅ Yes                    |
+| Speed                     | Faster (native)  | Slightly slower (Docker) |
+| Advanced features         | More             | Basic                    |
 
 ## Troubleshooting
 

@@ -7,13 +7,12 @@ branding:
 inputs:
   repository:
     description: 'Repository name with owner. For example, actions/checkout'
-    default: ${{ github.repository }}
+    required: false
   ref:
     description: 'The branch, tag or SHA to checkout. When checking out the repository that triggered a workflow, this defaults to the reference or SHA for that event.'
-    default: ''
+    required: false
   token:
     description: 'Personal access token (PAT) used to fetch the repository. Not typically needed for public repos.'
-    default: ${{ github.token }}
     required: false
   ssh-key:
     description: 'SSH key used to fetch the repository. Not typically needed.'
