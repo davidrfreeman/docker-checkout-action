@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-
 set -euo pipefail
 
 # Color output
@@ -55,39 +54,64 @@ if [ "${SET_SAFE_DIRECTORY}" = "true" ]; then
 fi
 
 # Setup SSH if key provided
-if [ -n "${SSH_KEY}" ]; then
+if [ -n "${SSH_KEY:-}" ]; then
     log_info "Configuring SSH key..."
     mkdir -p ~/.ssh
     echo "${SSH_KEY}" > ~/.ssh/id_rsa
     chmod 600 ~/.ssh/id_rsa
-    
-    if [ -n "${SSH_KNOWN_HOSTS}" ]; then
+
+    if [ -n "${SSH_KNOWN_HOSTS:-}" ]; then
         echo "${SSH_KNOWN_HOSTS}" > ~/.ssh/known_hosts
     else
+        # Add common git hosting services
         ssh-keyscan github.com >> ~/.ssh/known_hosts 2>/dev/null || true
         ssh-keyscan gitlab.com >> ~/.ssh/known_hosts 2>/dev/null || true
+
+        # For self-hosted Forgejo/Gitea, extract and scan the host
+        if [ -n "${GITHUB_SERVER_URL:-}" ]; then
+            SERVER_HOST=$(echo "${GITHUB_SERVER_URL}" | sed 's|https://||' | sed 's|http://||' | cut -d'/' -f1)
+            if [[ ! "${SERVER_HOST}" =~ github\.com|gitlab\.com ]]; then
+                log_info "Adding SSH key for self-hosted Git server: ${SERVER_HOST}"
+                ssh-keyscan -p 22 "${SERVER_HOST}" >> ~/.ssh/known_hosts 2>/dev/null || true
+            fi
+        fi
     fi
-    
+
     # Use SSH URL
-    if [[ "${GITHUB_SERVER_URL}" == *"github.com"* ]]; then
+    if [[ "${GITHUB_SERVER_URL:-}" == *"github.com"* ]]; then
         REPO_URL="git@github.com:${REPOSITORY}.git"
     else
         # For Forgejo/Gitea instances, construct SSH URL
-        SERVER_HOST=$(echo "${GITHUB_SERVER_URL}" | sed 's|https://||' | sed 's|http://||')
+        SERVER_HOST=$(echo "${GITHUB_SERVER_URL}" | sed 's|https://||' | sed 's|http://||' | cut -d'/' -f1)
         REPO_URL="git@${SERVER_HOST}:${REPOSITORY}.git"
     fi
 else
     # Use HTTPS with token if available
-    if [ -n "${TOKEN}" ] && [ "${TOKEN}" != "null" ]; then
+    if [ -n "${TOKEN:-}" ] && [ "${TOKEN}" != "null" ] && [ "${TOKEN}" != "" ]; then
         # Extract server from GITHUB_SERVER_URL
         SERVER="${GITHUB_SERVER_URL:-https://github.com}"
-        REPO_URL="${SERVER/https:\/\//https:\/\/${TOKEN}@}/${REPOSITORY}.git"
+
+        # Remove trailing slashes
+        SERVER="${SERVER%/}"
+
+        # Insert token into URL
+        if [[ "${SERVER}" == https://* ]]; then
+            # For https URLs, insert token after https://
+            REPO_URL="${SERVER/https:\/\//https:\/\/${TOKEN}@}/${REPOSITORY}.git"
+        elif [[ "${SERVER}" == http://* ]]; then
+            # For http URLs (self-hosted without SSL), insert token after http://
+            REPO_URL="${SERVER/http:\/\//http:\/\/${TOKEN}@}/${REPOSITORY}.git"
+        else
+            # Fallback: assume https
+            REPO_URL="https://${TOKEN}@${SERVER}/${REPOSITORY}.git"
+        fi
         log_info "Using HTTPS with authentication token"
     else
         # Public repo, no auth
         SERVER="${GITHUB_SERVER_URL:-https://github.com}"
+        SERVER="${SERVER%/}"
         REPO_URL="${SERVER}/${REPOSITORY}.git"
-        log_info "Using HTTPS without authentication"
+        log_info "Using HTTPS without authentication (public repository)"
     fi
 fi
 
@@ -96,16 +120,16 @@ log_info "Repository URL: ${REPO_URL//:[^:]*@/:***@}" # Mask token in logs
 # Check if directory is already a git repo
 if [ -d ".git" ]; then
     log_info "Existing repository detected"
-    
+
     if [ "${CLEAN}" = "true" ]; then
         log_info "Cleaning working directory..."
         git clean -ffdx
         git reset --hard HEAD
     fi
-    
+
     # Update remote URL
     git remote set-url origin "${REPO_URL}" 2>/dev/null || git remote add origin "${REPO_URL}"
-    
+
     # Fetch
     log_info "Fetching updates..."
     if [ "${FETCH_DEPTH}" = "0" ]; then
@@ -113,7 +137,7 @@ if [ -d ".git" ]; then
     else
         git fetch --depth="${FETCH_DEPTH}" origin
     fi
-    
+
     # Checkout
     if [ -n "${REF}" ]; then
         log_info "Checking out ${REF}..."
@@ -125,28 +149,28 @@ if [ -d ".git" ]; then
 else
     # Fresh clone
     log_info "Cloning repository..."
-    
+
     CLONE_ARGS=()
-    
+
     if [ "${FETCH_DEPTH}" != "0" ]; then
         CLONE_ARGS+=("--depth=${FETCH_DEPTH}")
     fi
-    
+
     if [ -n "${REF}" ]; then
         CLONE_ARGS+=("--branch=${REF}")
     fi
-    
+
     # Clone into temporary directory first, then move contents
     TMP_DIR=$(mktemp -d)
     git clone "${CLONE_ARGS[@]}" "${REPO_URL}" "${TMP_DIR}"
-    
+
     # Move contents to target directory
     shopt -s dotglob
     mv "${TMP_DIR}"/* "${FULL_PATH}/" 2>/dev/null || true
     rmdir "${TMP_DIR}"
-    
+
     cd "${FULL_PATH}"
-    
+
     # If specific SHA is needed and different from current HEAD
     if [ -n "${GITHUB_SHA}" ] && [ "$(git rev-parse HEAD)" != "${GITHUB_SHA}" ]; then
         log_info "Fetching specific commit ${GITHUB_SHA}..."
@@ -174,15 +198,38 @@ fi
 
 # Persist credentials if requested
 if [ "${PERSIST_CREDENTIALS}" = "true" ]; then
-    if [ -n "${TOKEN}" ] && [ "${TOKEN}" != "null" ]; then
+    if [ -n "${TOKEN:-}" ] && [ "${TOKEN}" != "null" ] && [ "${TOKEN}" != "" ]; then
         log_info "Persisting credentials in git config..."
+
+        # Configure git credential helper
         git config --local credential.helper store
-        echo "${REPO_URL}" | git credential approve
+
+        # Store credentials for the repository
+        SERVER="${GITHUB_SERVER_URL:-https://github.com}"
+        SERVER="${SERVER%/}"
+
+        # Extract protocol and host
+        if [[ "${SERVER}" == https://* ]]; then
+            PROTOCOL="https"
+            HOST="${SERVER#https://}"
+        elif [[ "${SERVER}" == http://* ]]; then
+            PROTOCOL="http"
+            HOST="${SERVER#http://}"
+        else
+            PROTOCOL="https"
+            HOST="${SERVER}"
+        fi
+
+        # Create credential entry
+        mkdir -p ~/.git-credentials
+        echo "${PROTOCOL}://${TOKEN}@${HOST}" >> ~/.git-credentials
+        chmod 600 ~/.git-credentials
     fi
 else
     # Remove credentials from URL if not persisting
-    if [ -n "${TOKEN}" ]; then
+    if [ -n "${TOKEN:-}" ] && [ "${TOKEN}" != "null" ] && [ "${TOKEN}" != "" ]; then
         SERVER="${GITHUB_SERVER_URL:-https://github.com}"
+        SERVER="${SERVER%/}"
         CLEAN_URL="${SERVER}/${REPOSITORY}.git"
         git remote set-url origin "${CLEAN_URL}"
     fi

@@ -42,7 +42,7 @@ jobs:
           pytest
 ```
 
-### With Forgejo
+### With Forgejo/Gitea (Self-Hosted)
 
 ```yaml
 name: Build
@@ -54,11 +54,24 @@ jobs:
     container:
       image: golang:1.21-alpine
     steps:
+      # Public repository - no token needed
       - uses: https://github.com/YOUR_GITHUB_USERNAME/docker-checkout-action@v1
 
       - name: Build
         run: go build -v ./...
 ```
+
+### With Forgejo/Gitea (Private Repository)
+
+```yaml
+steps:
+  # Private repository - use Forgejo's token
+  - uses: https://github.com/YOUR_GITHUB_USERNAME/docker-checkout-action@v1
+    with:
+      token: ${{ secrets.FORGEJO_TOKEN }}
+```
+
+**Note:** Forgejo automatically provides `${{ secrets.GITHUB_TOKEN }}` for accessing the current repository. For private repos, this token is automatically used.
 
 ### Advanced Usage
 
