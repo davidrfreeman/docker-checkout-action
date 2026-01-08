@@ -91,14 +91,14 @@ if [ -n "${SSH_KEY:-}" ]; then
     mkdir -p ~/.ssh
     echo "${SSH_KEY}" > ~/.ssh/id_rsa
     chmod 600 ~/.ssh/id_rsa
-    
+
     if [ -n "${SSH_KNOWN_HOSTS:-}" ]; then
         echo "${SSH_KNOWN_HOSTS}" > ~/.ssh/known_hosts
     else
         # Add common git hosting services
         ssh-keyscan github.com >> ~/.ssh/known_hosts 2>/dev/null || true
         ssh-keyscan gitlab.com >> ~/.ssh/known_hosts 2>/dev/null || true
-        
+
         # For self-hosted Forgejo/Gitea, extract and scan the host
         if [ -n "${GITHUB_SERVER_URL:-}" ]; then
             SERVER_HOST=$(echo "${GITHUB_SERVER_URL}" | sed 's|https://||' | sed 's|http://||' | cut -d'/' -f1)
@@ -108,7 +108,7 @@ if [ -n "${SSH_KEY:-}" ]; then
             fi
         fi
     fi
-    
+
     # Use SSH URL
     if [[ "${GITHUB_SERVER_URL:-}" == *"github.com"* ]]; then
         REPO_URL="git@github.com:${REPOSITORY}.git"
@@ -122,10 +122,10 @@ else
     if [ -n "${TOKEN:-}" ] && [ "${TOKEN}" != "null" ] && [ "${TOKEN}" != "" ]; then
         # Extract server from GITHUB_SERVER_URL
         SERVER="${GITHUB_SERVER_URL:-https://github.com}"
-        
+
         # Remove trailing slashes
         SERVER="${SERVER%/}"
-        
+
         # Insert token into URL
         if [[ "${SERVER}" == https://* ]]; then
             # For https URLs, insert token after https://
@@ -152,16 +152,16 @@ log_info "Repository URL: ${REPO_URL//:[^:]*@/:***@}" # Mask token in logs
 # Check if directory is already a git repo
 if [ -d ".git" ]; then
     log_info "Existing repository detected"
-    
+
     if [ "${CLEAN}" = "true" ]; then
         log_info "Cleaning working directory..."
         git clean -ffdx
         git reset --hard HEAD
     fi
-    
+
     # Update remote URL
     git remote set-url origin "${REPO_URL}" 2>/dev/null || git remote add origin "${REPO_URL}"
-    
+
     # Fetch
     log_info "Fetching updates..."
     if [ "${FETCH_DEPTH}" = "0" ]; then
@@ -169,7 +169,7 @@ if [ -d ".git" ]; then
     else
         git fetch --depth="${FETCH_DEPTH}" origin
     fi
-    
+
     # Checkout
     if [ -n "${REF}" ]; then
         log_info "Checking out ${REF}..."
@@ -181,28 +181,28 @@ if [ -d ".git" ]; then
 else
     # Fresh clone
     log_info "Cloning repository..."
-    
+
     CLONE_ARGS=()
-    
+
     if [ "${FETCH_DEPTH}" != "0" ]; then
         CLONE_ARGS+=("--depth=${FETCH_DEPTH}")
     fi
-    
+
     if [ -n "${REF}" ]; then
         CLONE_ARGS+=("--branch=${REF}")
     fi
-    
+
     # Clone into temporary directory first, then move contents
     TMP_DIR=$(mktemp -d)
     git clone "${CLONE_ARGS[@]}" "${REPO_URL}" "${TMP_DIR}"
-    
+
     # Move contents to target directory
     shopt -s dotglob
     mv "${TMP_DIR}"/* "${FULL_PATH}/" 2>/dev/null || true
     rmdir "${TMP_DIR}"
-    
+
     cd "${FULL_PATH}"
-    
+
     # If specific SHA is needed and different from current HEAD
     if [ -n "${GITHUB_SHA}" ] && [ "$(git rev-parse HEAD)" != "${GITHUB_SHA}" ]; then
         log_info "Fetching specific commit ${GITHUB_SHA}..."
@@ -232,14 +232,14 @@ fi
 if [ "${PERSIST_CREDENTIALS}" = "true" ]; then
     if [ -n "${TOKEN:-}" ] && [ "${TOKEN}" != "null" ] && [ "${TOKEN}" != "" ]; then
         log_info "Persisting credentials in git config..."
-        
+
         # Configure git credential helper
         git config --local credential.helper store
-        
+
         # Store credentials for the repository
         SERVER="${GITHUB_SERVER_URL:-https://github.com}"
         SERVER="${SERVER%/}"
-        
+
         # Extract protocol and host
         if [[ "${SERVER}" == https://* ]]; then
             PROTOCOL="https"
@@ -251,7 +251,7 @@ if [ "${PERSIST_CREDENTIALS}" = "true" ]; then
             PROTOCOL="https"
             HOST="${SERVER}"
         fi
-        
+
         # Create credential entry
         mkdir -p ~/.git-credentials
         echo "${PROTOCOL}://${TOKEN}@${HOST}" >> ~/.git-credentials
