@@ -251,8 +251,8 @@ if [ "${PERSIST_CREDENTIALS}" = "true" ]; then
 
         # Create credential entry
         mkdir -p ~/.config/git
-        echo "${PROTOCOL}://${TOKEN}@${HOST}" > ~/.config/git/credentials
-        chmod 600 ~/.git-credentials
+        echo "${PROTOCOL}://${TOKEN}@${HOST}" >> ~/.config/git/credentials
+        chmod 600 ~/.config/git/credentials
 
         # Configure git credential helper
         git config --global credential.helper "store --file=$HOME/.config/git/credentials"
