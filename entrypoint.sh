@@ -233,9 +233,6 @@ if [ "${PERSIST_CREDENTIALS}" = "true" ]; then
     if [ -n "${TOKEN:-}" ] && [ "${TOKEN}" != "null" ] && [ "${TOKEN}" != "" ]; then
         log_info "Persisting credentials in git config..."
 
-        # Configure git credential helper
-        git config --local credential.helper store
-
         # Store credentials for the repository
         SERVER="${GITHUB_SERVER_URL:-https://github.com}"
         SERVER="${SERVER%/}"
@@ -253,9 +250,12 @@ if [ "${PERSIST_CREDENTIALS}" = "true" ]; then
         fi
 
         # Create credential entry
-        mkdir -p ~/.git-credentials
-        echo "${PROTOCOL}://${TOKEN}@${HOST}" >> ~/.git-credentials
+        mkdir -p ~/.config/git
+        echo "${PROTOCOL}://${TOKEN}@${HOST}" > ~/.config/git/credentials
         chmod 600 ~/.git-credentials
+
+        # Configure git credential helper
+        git config --global credential.helper "store --file=$HOME/.config/git/credentials"
     fi
 else
     # Remove credentials from URL if not persisting
