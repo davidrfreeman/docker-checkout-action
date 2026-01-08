@@ -47,16 +47,3 @@ inputs:
 runs:
   using: 'docker'
   image: 'docker://ghcr.io/davidrfreeman/docker-checkout-action:v0'
-  env:
-    INPUT_REPOSITORY: ${{ inputs['repository'] }}
-    INPUT_REF: ${{ inputs['ref'] }}
-    INPUT_TOKEN: ${{ inputs['token'] }}
-    INPUT_SSH_KEY: ${{ inputs['ssh-key'] }}
-    INPUT_SSH_KNOWN_HOSTS: ${{ inputs['ssh-known-hosts'] }}
-    INPUT_PERSIST_CREDENTIALS: ${{ inputs['persist-credentials'] }}
-    INPUT_PATH: ${{ inputs['path'] }}
-    INPUT_CLEAN: ${{ inputs['clean'] }}
-    INPUT_FETCH_DEPTH: ${{ inputs['fetch-depth'] }}
-    INPUT_LFS: ${{ inputs['lfs'] }}
-    INPUT_SUBMODULES: ${{ inputs['submodules'] }}
-    INPUT_SET_SAFE_DIRECTORY: ${{ inputs['set-safe-directory'] }}
