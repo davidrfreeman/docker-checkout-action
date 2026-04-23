@@ -10,14 +10,14 @@ The standard `actions/checkout` action is written in JavaScript and requires Nod
 
 ## Features
 
-✅ **No Node.js required** - Works with any container image
-✅ **Pre-built images** - Fast execution, no build time
-✅ **Multi-platform** - Supports AMD64 and ARM64
-✅ **Full Git functionality** - Supports branches, tags, commits, and SHA checkouts
-✅ **Submodules support** - Can recursively checkout submodules
-✅ **Git LFS support** - Download large files if needed
-✅ **SSH & HTTPS** - Supports both authentication methods
-✅ **Forgejo/Gitea compatible** - Works seamlessly with self-hosted Git servers
+✅ **No Node.js required** - Works with any container image  
+✅ **Pre-built images** - Fast execution, no build time  
+✅ **Multi-platform** - Supports AMD64 and ARM64  
+✅ **Full Git functionality** - Supports branches, tags, commits, and SHA checkouts  
+✅ **Submodules support** - Can recursively checkout submodules  
+✅ **Git LFS support** - Download large files if needed  
+✅ **SSH & HTTPS** - Supports both authentication methods  
+✅ **Forgejo/Gitea compatible** - Works seamlessly with self-hosted Git servers  
 ✅ **GitHub compatible** - Drop-in replacement for basic `actions/checkout` usage
 
 ## Usage
